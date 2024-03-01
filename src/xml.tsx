@@ -83,6 +83,7 @@ export type AdditionalProps = {
   override?: object;
   onLoad?: () => void;
   fallback?: JSX.Element;
+  ignoreEmptySvg?: boolean;
 };
 
 export type UriProps = SvgProps & { uri: string | null } & AdditionalProps;
@@ -109,10 +110,17 @@ export const err = console.error.bind(console);
 
 export function SvgXml(props: XmlProps) {
   const { onError = err, xml, override, fallback } = props;
+  // So difficult check on "override?.ignoreEmptySvg" because of ts. override must be some recursive type
+  const ignoreEmpty =
+    (override && 'ignoreEmptySvg' in override && override?.ignoreEmptySvg) ||
+    props.ignoreEmptySvg;
 
   try {
     const ast = useMemo<JsxAST | null>(
-      () => (xml !== null ? parse(xml) : null),
+      () =>
+        (!ignoreEmpty && xml) || (ignoreEmpty && xml !== null)
+          ? parse(xml)
+          : null,
       [xml]
     );
     return <SvgAst ast={ast} override={override || props} />;
